@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MetaMask Transaction</title>
+  <!-- import the ether js library into our web Page  -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <!-- Styling  -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 32px;
+    }
+    label, input, button {
+      display: block;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Send Ether with MetaMask</h2>
+
+  <button id="connectBtn">Connect MetaMask</button>
+  <div id="walletAddress"></div>
+
+  <label for="recipient">Recipient Address:</label>
+  <input type="text" id="recipient" placeholder="0x..." required>
+
+ 
+ <label for="amount">Amount (ETH):</label>
+  <input type="text" id="amount" placeholder="0.01" required>
+  <button id="sendBtn">Send Transaction</button>
+
+  <div id="status" style="margin-top: 20px; font-weight: bold;"></div>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+      let provider, signer;
+
+      async function connectWallet() {
+        if (!window.ethereum) {
+          document.getElementById('status').innerText = 'MetaMask is not installed!';
+          return;
+        }
+
+        try {
+          provider = new window.ethers.BrowserProvider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          document.getElementById('walletAddress').innerText = `Connected Wallet: ${address}`;
+          document.getElementById('status').innerText = '';
+        } catch (err) {
+          console.error(err);
+          document.getElementById('status').innerText = 'Connection failed.';
+        }
+      }
+
+      async function sendTransaction() {
+        if (!signer) {
+          document.getElementById('status').innerText = 'Please connect your wallet first.';
+          return;
+        }
+
+        const recipient = document.getElementById('recipient').value.trim();
+        const amount = document.getElementById('amount').value.trim();
+
+        if (!window.ethers.isAddress(recipient)) {
+          document.getElementById('status').innerText = 'Invalid recipient address.';
+          return;
+        }
+
+        if (!amount || isNaN(amount)) {
+          document.getElementById('status').innerText = 'Invalid amount.';
+          return;
+        }
+
+        try {
+          const tx = await signer.sendTransaction({
+            to: recipient,
+            value: window.ethers.parseEther(amount)
+          });
+          document.getElementById('status').innerText = `Transaction sent! Hash: ${tx.hash}`;
+        } catch (err) {
+          console.error(err);
+          document.getElementById('status').innerText = `Error: ${err.message}`;
+        }
+      }
+
+      document.getElementById('connectBtn').addEventListener('click', connectWallet);
+      document.getElementById('sendBtn').addEventListener('click', sendTransaction);
+    });
+  </script>
+</body>
+</html>
